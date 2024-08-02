@@ -15,6 +15,7 @@ class Wallet(models.Model):
     def __str__(self):
         return f"{self.user.username} - {self.currency_name}: {self.amount}"
 
+
 class Transaction(models.Model):
     amount = models.IntegerField()
     source = models.ForeignKey(Wallet, on_delete=models.CASCADE, related_name='outgoing_transactions')
