@@ -1,0 +1,9 @@
+class CryptoNotFoundError(Exception):
+    ...
+
+
+class UserNotFoundError(Exception):
+    ...
+
+class InsufficientBalanceError(Exception):
+    ...
