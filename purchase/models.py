@@ -25,3 +25,15 @@ class Transaction(models.Model):
 
     def __str__(self):
         return f"Transaction: {self.amount} from {self.source}"
+
+
+class WaitingListEntry(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    currency_name = models.CharField(max_length=10)
+    count = models.IntegerField()
+
+    class Meta:
+        unique_together = ('user', 'currency_name')
+
+    def __str__(self):
+        return f"{self.user.username} - {self.currency_name}: {self.count}"

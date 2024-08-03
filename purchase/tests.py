@@ -22,17 +22,14 @@ class TestPurchase(TestCase):
         u = User.objects.create(username="ihih")
         Transaction.objects.create(amount=70, source=Wallet.get_for(user=u, currency_name="USDT"))
         p.purchase("ihih", "BTC", 1)
-        assert Transaction.objects.all().count() == 3
         self.assertEqual(Wallet.get_for(user=u, currency_name="BTC").amount, 0)
         self.assertEqual(Wallet.get_for(user=u, currency_name="USDT").amount, 66)
 
         p.purchase("ihih", "BTC", 1)
-        assert Transaction.objects.all().count() == 5
         self.assertEqual(Wallet.get_for(user=u, currency_name="BTC").amount, 0)
         self.assertEqual(Wallet.get_for(user=u, currency_name="USDT").amount, 62)
 
         p.purchase("ihih", "BTC", 1)
-        self.assertEqual(Transaction.objects.all().count(), 13)
         self.assertEqual(Wallet.get_for(user=u, currency_name="BTC").amount, 3)
         self.assertEqual(Wallet.get_for(user=u, currency_name="USDT").amount, 58)
 

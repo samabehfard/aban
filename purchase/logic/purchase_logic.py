@@ -2,13 +2,12 @@ from django.db import transaction
 
 from purchase.adapter.exchange import ExchangeAdapter
 from purchase.errors import CryptoNotFoundError, UserNotFoundError, InsufficientBalanceError
-from purchase.models import Transaction, Wallet
+from purchase.models import Transaction, Wallet, WaitingListEntry
 from users.models import User
 
 # Constants
 BROKERS_MIN_TOTAL = 10
 CRYPTO_CURRENCIES = {"BTC": 4}
-WAITINGS = {"BTC": []}
 
 
 class PurchaseLogic:
@@ -42,12 +41,15 @@ class PurchaseLogic:
             self.handle_waiting_list(user, count, currency_name, total)
 
     def buy(self, data, currency_name="BTC"):
-        total_count = sum(item["count"] for item in WAITINGS[currency_name])
+        total_count = sum(item["count"] for item in data)
 
         with transaction.atomic():
             if self.exchange_adapter.buy_from_exchange(name=currency_name, count=total_count):
                 for item in data:
                     self.process_individual_purchase(item['user'], item['count'], currency_name)
+
+                # Clear waiting list entries
+                WaitingListEntry.objects.filter(currency_name=currency_name).delete()
 
     def process_individual_purchase(self, user, count, currency_name):
         destination_crypto_wallet = Wallet.get_for(user=self.aban_user, currency_name=currency_name)
@@ -58,21 +60,32 @@ class PurchaseLogic:
 
     def handle_waiting_list(self, user, count, currency_name, total):
         # Add user to waiting list
-        WAITINGS[currency_name].append({"user": user, "count": count})
-        waitings_total = sum(item["count"] * CRYPTO_CURRENCIES[currency_name] for item in WAITINGS[currency_name])
+        entry, created = WaitingListEntry.objects.get_or_create(
+            user=user,
+            currency_name=currency_name,
+            defaults={'count': count}
+        )
 
-        # If the total in waiting list is sufficient, process the purchase
+        if not created:
+            entry.count += count
+            entry.save()
+
+        waitings_total = sum(
+            entry.count * CRYPTO_CURRENCIES[entry.currency_name] for entry in
+            WaitingListEntry.objects.filter(currency_name=currency_name)
+        )
+
+        # If the total in the waiting list is sufficient, process the purchase
         if waitings_total >= BROKERS_MIN_TOTAL:
-            self.buy(data=WAITINGS[currency_name], currency_name=currency_name)
-            WAITINGS[currency_name].clear()
+            waiting_entries = WaitingListEntry.objects.filter(currency_name=currency_name)
+            data = [{'user': entry.user, 'count': entry.count} for entry in waiting_entries]
+            self.buy(data=data, currency_name=currency_name)
 
-    @staticmethod
-    def get_user(username):
+    def get_user(self, username):
         user = User.objects.filter(username=username).first()
         if not user:
             raise UserNotFoundError()
         return user
 
-    @staticmethod
-    def create_transaction(amount, wallet):
+    def create_transaction(self, amount, wallet):
         Transaction.objects.create(amount=amount, source=wallet)
