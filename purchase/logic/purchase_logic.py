@@ -7,7 +7,7 @@ from users.models import User
 
 # Constants
 BROKERS_MIN_TOTAL = 10
-CRYPTO_CURRENCIES = {"BTC": 4}
+CRYPTO_CURRENCIES = {"BTC": 4,"ETH":3}
 
 
 class PurchaseLogic:
