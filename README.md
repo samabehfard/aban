@@ -1,4 +1,5 @@
 ### پروژه‌ی آبان تتر 
+[![asciicast](https://asciinema.org/a/Dmbz3hlvhP1V9irWB9GN4wzH7.svg)](https://asciinema.org/a/Dmbz3hlvhP1V9irWB9GN4wzH7)
 
 1. **ساخت ایمیج داکر**:
 
